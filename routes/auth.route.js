@@ -1,11 +1,12 @@
-import express from 'express';
+import {Router} from 'express';
 import { login, register } from '../controllers/auth.controller.js';
 import {body} from 'express-validator'
 import { validationResultExpress } from '../middlewares/validationResultExpress.js';
-const router = express.Router();
+const router = Router();
 
 /**
  * IMPORTANTE: Las rutas deben ser controladas en el archivo controlador
+ * Validación de campos: Para validar los campos usamos el paquete de express.validator. Importamos body para capturar los valores que se envían a traves del req.
  */
 router.post('/register',
     [

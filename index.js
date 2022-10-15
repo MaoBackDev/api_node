@@ -8,7 +8,7 @@ const app = express()           // object express
 app.use(express.json())  // Permite leer las solicitidues en json
 
 // Routs
-app.use('/api/v1/', authRouter)
+app.use('/api/v1/user', authRouter)
 
 
 
