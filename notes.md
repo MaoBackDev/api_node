@@ -21,12 +21,48 @@ Para este proyecto usaremos las siguientes dependencias:
 
 ## Estructura del proyecto
 index.js
+
 .env
+
 .gitignore
+
 README.md
+
 └── controllers
+
 └── database
+
 └── helpers
+
 └── middlewares
+
 └── models
+
 └── routes
+
+
+## Schemas
+Los esquemas nos permitiran dar una estructura para cada registro en la base de datos. Los esquemas los usamos a través de la dependencia de mongoose. Debemos importar el modulo y usar la clase Schema y el método model:
+1. Importación del módulo y creación de las constantes. Para la creación de las constantes usamos la destructuración de objetos: 
+    `import mongoose from 'mongoose'`
+    `const {Schema, model} = mongoose`
+2. Creamos nuestro eschema como un objeto de la clase Schema:
+    ```
+        const userSchema = new Schema({
+            email: {
+                type: String,
+                required: true,
+                trim: true,
+                unique: true,
+                lowercase: true,
+                index: { unique: true },
+            },
+            password: {
+                type: String,
+                required: true,
+            },
+        })
+    ```
+    Este, será el schema de nuestra base de datos, el cual recibe en su constructor un objeto con los campos que tendrá nuestro registro, a su vez, los campos contiene atributos que podemos agregar como campos de validación.
+3. Exportamos nuestro esquema usando el método model, este recibe como parámetros un nombre --> string y el esquema que creamos
+    `const User = model('user', userSchema)`

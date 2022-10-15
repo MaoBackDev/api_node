@@ -1,3 +1,4 @@
+// Database connection with mongo db
 import mongoose from "mongoose"
 
 try {
@@ -6,9 +7,3 @@ try {
 } catch (error){
     console.log("Error de conexión -> " + error)
 }
-
-
-
-// mongoose.connect(process.env.URI_MONGO,
-//     {useNewUrlParser: true, useUnifiedTopology: true} 
-//   )
