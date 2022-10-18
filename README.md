@@ -301,3 +301,79 @@ Ahora creamos las rutas de login y la ruta protegida donde usaremos los controla
     ```
 2. Ruta protegida: Usa el middleware tokenRequired y el controlador infoUser
     ``` router.get('/protected', tokenRequired, infoUser) ```
+
+
+## Persistencia del token
+En pasos anteriores hemos creado un token, el cual podiamos usar para acceder a una ruta protegida y que nos retornara el email del usuario que realizaba el login. No obstante, necesitamos mantener el token activo para poder usarlo durante la sesión del usuario logeado. Para asegurar la persistencia del token, se suele usar el localStorage y las cookies, teniendo estos dos métodos cierta vulnerabilidad a clientes maliciosos. Para nuestra api usaremos un refresh token; este vivirá en el navegador pero el token original del usuario permancerá en la memoria de nuestro equipo, esta forma garantiza que practicamente sea invulnerable a los ataques. Para generar esta funcionalidad seguiremos los siguientes pasos:
+1. Iremos hasta la carpeta utils y en el archivo tokenManager crearemos una nueva función:
+
+    ```
+        // Generar el refresh token
+        export const refreshTokenGenerator = (uid, res) => {
+
+            const expiresIn = 60 * 60 * 24 * 30 // tiempo de expiración de 30 días
+
+            try {  
+                // Firma del token usando la variable de ambiente JWT_REFRESH
+                const refreshToken = jwt.sign({uid}, process.env.JWT_REFRESH, {expiresIn})
+
+                // Guardar el refresh token en una cookie
+                res.cookie('refreshToken', refreshToken, {
+                    httpOnly: true,
+                    secure: !(process.env.MODE === 'developer'),  // Retorna false
+                    expires: new Date(Date.now() + expiresIn * 1000)  // Se necesita para la expiración del refresh token
+                })
+
+            } catch (error) {
+                console.log(error)
+            }
+        }
+    ```
+
+En esta función lo que haremos será firmar un nuevo token, con la diferencia que usaremos una nueva variable de entorno para el refreshToken yo la llamaré JWT_REFRESH y puede tener cualquier string como valor. La varibale espiresIn tendrá un tiempo de expiración de 30 días(pudes poner el tiempo que desees). por último almacenaremos el token en una cookie.
+
+2. El siguiente paso será ir a nuestro controller y creamos un nuevo controlador que se encargará de gestionar el refreshToken y enviarlo a una nueva ruta que crearemos en el siguiente paso. Es necesario importar el módulo jwt en el controlador. Así quedará nuestro controlador:
+
+```
+import jwt from 'jsonwebtoken'
+// Controlador para el refresh token
+export const refreshToken = (req, res) => {
+
+  try { 
+    // Recuperamos el refresh token de las cookies. Almacenado en el archivo tokenManager
+    const refreshTokenCookie = req.cookies.refreshToken
+
+    if(!refreshTokenCookie) throw new Error("No Existe el Token")  // Validar la existencia del token
+
+    // Se verifica el token usando jwt y almacenamos el payload(uid) en una constante
+    const {uid} = jwt.verify(refreshTokenCookie, process.env.JWT_REFRESH)
+
+    // Generamos un token(válido) y le pasamos el uid extraido en el paso anterior
+    const { token, expiresIn } = generateToken(uid);
+
+    return res.json({token, expiresIn})
+
+  } catch (error) {
+    console.log(error)
+    // Verificación de errores
+    const tokenVerificationErrors = {
+      "invalid signature": "La firma del JWT no es válida",
+      "jwt expired": "JWT expirado",
+      "invalid token": "Token no válido",
+      "No bearer": "Utiliza el formato bearer",
+      "jwt malformed": "JWT malformado"
+  }
+
+  return res.status(401).send({error: tokenVerificationErrors[error.message]})
+  }
+
+}
+```
+
+3. Por último crearemos una nueva ruta protegida que se encargará de refrescar el token cada que este cumpla su ciclo de vida. Debemos importar la función refreshToken que creamos en el controlador en el paso anterior
+
+``` 
+    import { infoUser, login, refreshToken, register } from '../controllers/auth.controller.js';
+    // Ruta para el refresh token
+    router.get('/refresh', refreshToken) 
+```

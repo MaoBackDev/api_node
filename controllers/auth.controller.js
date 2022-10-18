@@ -1,6 +1,4 @@
-// Contiene la lógica
-
-// Importar modelo
+import jwt from 'jsonwebtoken'
 import { User } from "../models/User.js";
 import { generateToken } from "../utils/tokenManager.js";
 
@@ -58,3 +56,37 @@ export const infoUser = async (req, res) => {
     return res.status(500).json({error: "Error del servidor"})
   }
 };
+
+
+// Controlador para eñl refresh token
+export const refreshToken = (req, res) => {
+
+  try { 
+    // Recuperamos el refresh token de las cookies. Almacenado en el archivo tokenManager
+    const refreshTokenCookie = req.cookies.refreshToken
+
+    if(!refreshTokenCookie) throw new Error("No Existe el Token")  // Validar la existencia del token
+
+    // Se verifica el token usando jwt y almacenamos el payload(uid) en una constante
+    const {uid} = jwt.verify(refreshTokenCookie, process.env.JWT_REFRESH)
+
+    // Generamos un token(válido) y le pasamos el uid extraido en el paso anterior
+    const { token, expiresIn } = generateToken(uid);
+
+    return res.json({token, expiresIn})
+
+  } catch (error) {
+    console.log(error)
+    // Verificación de errores
+    const tokenVerificationErrors = {
+      "invalid signature": "La firma del JWT no es válida",
+      "jwt expired": "JWT expirado",
+      "invalid token": "Token no válido",
+      "No bearer": "Utiliza el formato bearer",
+      "jwt malformed": "JWT malformado"
+  }
+
+  return res.status(401).send({error: tokenVerificationErrors[error.message]})
+  }
+
+}
