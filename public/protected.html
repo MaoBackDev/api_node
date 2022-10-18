@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Ruta protegida</h1>
+
+    <div>
+        <h2>Email: <span id="app"></span> </h2>
+
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async (e) =>{
+            //const token = localStorage.getItem('token') //Recuperado con localStorage
+
+            try {
+                const resToken = await fetch('/api/v1/user/refresh', {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+
+                const {token} = await resToken.json()
+
+                const res = await fetch('/api/v1/user/protected', {
+                    method: 'GET',
+                    headers: {
+                        // 'Authorization': `Bearer ${token}`, // localStorage
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'  // usando cookies
+                })
+
+                console.log(res.ok, res.status)
+                const data = await res.json()
+                console.log(data)
+
+                if(res.ok)
+                    document.getElementById('app').textContent = data.email
+
+            } catch (error) {
+                
+            }
+        })
+    </script>
+</body>
+</html>
