@@ -30,14 +30,23 @@ Para este proyecto usaremos las siguientes dependencias:
 
 ## Estructura del proyecto
 index.js
+
 .env
+
 .gitignore
+
 README.md
+
 └── controllers
+
 └── database
+
 └── helpers
+
 └── middlewares
+
 └── models
+
 └── routes
 
 
@@ -152,4 +161,143 @@ Las validaciones siempre deben tener una prioridad en nuestras aplicaciones, par
         )
     ```
 
+## JWT(json web token)
+JWT no es un estándar de autenticación, sino que simplemente, es un estándar que nos permite hacer una comunicación entre dos partes de identidad de usuario. Con este proceso, además, podríamos implementar la autenticación de usuario de una manera que fuera relativamente segura.
 
+### Configuración y generación de tokens
+Para iniciar, se crea un directorio llmado utils: utils contendrá funciones que nos permitan gestionar nuestro sitio web. A continuación, creamos un archivo .js(El nombre que se desee), yo lo llamará tokenManager.js.  Seguiremos los siguientes pasos:
+1. Importar el módulo jwt
+    ``` import jwt from 'jsonwebtoken' ```
+2. Creamos una función que nos permita gestionar nuestro token
+    ```
+        export const generateToken = (uid) => {
+
+            // Tiempo de vids del token
+            const expiresIn = 60 * 15
+
+            try {
+                // Construcción del token
+                const token = jwt.sign({uid}, process.env.JWT_SECRET, {expiresIn})
+                return {token, expiresIn}
+            }catch(error){
+                console.log(error)
+            }
+        }
+    ```
+
+La función recibe como parámetro el id del usuario, luego le asignamos un tiempo de vida al token en este caso durará 15 minutos.
+Para construir el token, usamaos la función sign() del módulo jwt, la cual, recibe como parámetros el id como un objeto, también necesita un string secreto que configuramos en las variables de entorno(Puede ser cualquier string) y por último le pasamos la expiración también como objeto. estos pasos generan nuestro token, lo ultimo que hacemos es retornarlo como un objeto.
+
+### ¿Cómo usar el método anterior?
+Para la utilización de nuestra utilidad(Función), crearemos un middleware, este nos permitirá accederlo desde culaquier controlador que lo requiera. Ejecutaremos los siguientes pasos para la construcción del middleware:
+1. Importar el módulo jwt
+2. Crear la función(nombre deseado): la función recibe como parámetros el req, res, next  
+    ``` export const tokenRequire = (req, res, next) => {} ```
+3. Recuperamos la información enviada a trav´s del req: es importante aclarar que en este paso no accederemos al body, para este caso la información viajará a través del objeto headers, este a su vez contine un método llamdo authorization, el cual usa un tipo de convención llamado bearer token(Es el que se usa normalmente)
+    ``` let token = req.headers.authorization;  ```
+4. Verificamos que exista el token y como está usando bearer, debemos separar el token de la convención de bearer ya que esta  nos retorna una cadena con la palabra bearer, un espacio y el token. para ello usamos la función split()
+    ``` token = token.split(' ')[1] ```
+5. Usando la función verify() del módulo jwt validamos que el token sea valido:
+    ``` const {uid} = jwt.verify(token, process.env.JWT_SECRET) ```
+
+6. Si el paso anterior es válido, al re.uid le asignamos el uid del paso anterior y continuamos con la ejecución
+    ``` 
+        req.uid = uid
+        next()
+     ```
+7. Por ultimo validamos los posibles errores y nuestra función se vería así:
+    ```
+        import jwt from 'jsonwebtoken'
+
+        export const tokenRequired = (req, res, next) => {
+
+            try {
+                // Recuperamos el token enviado a través del request
+                let token = req.headers.authorization; 
+
+                // Validar que el token sea válido
+                if(!token)
+                    throw new Error('No bearer')
+                
+                // Separamos el formato bearer del token para no generar errores
+                token = token.split(' ')[1]
+
+                // Verificamos que el token exista en la base de datos. Nos retorna el payload que asignamos en la firma del token
+                const {uid} = jwt.verify(token, process.env.JWT_SECRET)
+
+                // Se envía el id del usuario al request para ser usado en cualquier controlador que use el middleware
+                req.uid = uid
+                next()
+            }catch (error){
+                console.log(error.message)
+
+                // Verificación de errores
+                const tokenVerificationErrors = {
+                    "invalid signature": "La firma del JWT no es válida",
+                    "jwt expired": "JWT expirado",
+                    "invalid token": "Token no válido",
+                    "No bearer": "Utiliza el formato bearer",
+                    "jwt malformed": "JWT malformado"
+                }
+
+                return res.status(401).
+                send({error: tokenVerificationErrors[error.message]})
+            }
+        }
+    ```
+
+### Uso del middleware en el controlador
+Para usar las funciones anteriores, crearemos un controlador para gestionar el login de un usuario, donde primeramente recuperamos los valores enviados a través del body, generamos un aconsulta a la base de datos para verificar que la información sea verídica, si esto ocurre generamos el token. Así quedaría el controlador para el login:
+
+```
+    export const login = async (req, res) => {
+    const { email, password } = req.body; // recuperar los datos enviados en el request
+
+    try {
+        let user = await User.findOne({ email }); // consultar si existe el email en la base de datos
+        // Comparar las contraseñas. El método comparePassword es creado en el schema
+        const passwordValidated = await user.comparePassword(password);
+
+        if (!user || !passwordValidated)
+        return res.status(400).json({ error: "Credenciales incorrectas" });
+
+        // GENERAR JWT (json web token)
+        const { token, expiresIn } = generateToken(user._id);
+
+        return res.json({ token, expiresIn });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Error del servidor" });
+    }
+    };
+```
+
+Ahora crearemos otro controlador que nos permita acceder a la información del usuario una vez este haya sido validado y se generará el token satisfactoriamente:
+    ```
+        // Funcción para acceder a la información del usuario loggeado
+        export const infoUser = async (req, res) => {
+        try {
+            // Consulta  a la base de datos .lean() retorna el objeto con los datos específicos. Hace la consulta más rápida
+            const user = await User.findById(req.uid).lean();
+            return res.json({email: user.email});
+        } catch (error) {
+            return res.status(500).json({error: "Error del servidor"})
+        }
+        };
+    ```
+
+
+Ahora creamos las rutas de login y la ruta protegida donde usaremos los controladores creados en el paso anterior:
+
+1. Ruta para el login: esta tiene validaciones y usa el middleware validationResultExpress
+    ``` 
+        router.post('/login',[
+        body('email', "El formato no es correcto").trim().isEmail().normalizeEmail(),
+        body('password', "La contraseña debe contener mínimo 8 caracteres").trim().isLength({min: 8}),
+        ], 
+        validationResultExpress,
+        login
+        )
+    ```
+2. Ruta protegida: Usa el middleware tokenRequired y el controlador infoUser
+    ``` router.get('/protected', tokenRequired, infoUser) ```

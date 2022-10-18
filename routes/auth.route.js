@@ -1,7 +1,8 @@
 import {Router} from 'express';
-import { login, register } from '../controllers/auth.controller.js';
+import { infoUser, login, register } from '../controllers/auth.controller.js';
 import {body} from 'express-validator'
 import { validationResultExpress } from '../middlewares/validationResultExpress.js';
+import { tokenRequired } from '../middlewares/tokenRequired.js';
 const router = Router();
 
 /**
@@ -31,6 +32,10 @@ router.post('/login',[
     validationResultExpress,
     login
 )
+
+
+// Ruta Protegida
+router.get('/protected', tokenRequired, infoUser)
 
 
 // Permite ser usado en otros módulos y asignarle el nombre que se necesite
