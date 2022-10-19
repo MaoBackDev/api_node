@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import { infoUser, login, refreshToken, register } from '../controllers/auth.controller.js';
+import { infoUser, login, logout, refreshToken, register } from '../controllers/auth.controller.js';
 import {body} from 'express-validator'
 import { validationResultExpress } from '../middlewares/validationResultExpress.js';
 import { tokenRequired } from '../middlewares/tokenRequired.js';
@@ -39,6 +39,9 @@ router.get('/protected', tokenRequired, infoUser)
 
 //  Ruta para refrrescar el token
 router.get('/refresh', refreshToken)
+
+// LOGOUT
+router.get('/logout', logout)
 
 
 // Permite ser usado en otros módulos y asignarle el nombre que se necesite

@@ -91,7 +91,11 @@ export const refreshToken = (req, res) => {
   }
 
 }
-
+//  Logout
+export const logout = (req, res) => {
+  res.clearCookie('refreshToken')
+  res.json({ok: true})
+}
 
 /*
 export const loginCookies = async (req, res) => {

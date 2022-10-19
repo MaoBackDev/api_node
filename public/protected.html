@@ -12,10 +12,24 @@
     <div>
         <h2>Email: <span id="app"></span> </h2>
 
+        <button id="logout">Logout</button>
+
     </div>
 
 
     <script>
+
+        // Logout
+        const logout = document.getElementById('logout')
+        logout.addEventListener('click', async() => {
+            const res = await  fetch('/api/v1/user/logout', {
+                method: 'GET'
+            })
+            console.log(res)
+            // window.location('/api/v1/user/login')
+        })
+
+
         document.addEventListener('DOMContentLoaded', async (e) =>{
             //const token = localStorage.getItem('token') //Recuperado con localStorage
 
