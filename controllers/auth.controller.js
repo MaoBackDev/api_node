@@ -90,3 +90,11 @@ export const refreshToken = (req, res) => {
   }
 
 }
+
+
+// CERRAR SESIÓN
+export const logout = (req, res) => {
+  res.clearCookie('refresToken')
+  res.json({ok: true})
+
+}
