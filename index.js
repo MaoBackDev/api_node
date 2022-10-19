@@ -3,6 +3,7 @@ import 'dotenv/config' // enviroment variables
 import './database/connectdb.js' // Database conectction module
 import express from 'express'  // Import express
 import authRouter from './routes/auth.route.js';
+import linkRouter from './routes/link.router.js'
 
 const PORT = process.env.PORT || 5000  
 const app = express()           // object express
@@ -11,6 +12,7 @@ app.use(cookieParser())  // Permite usar cookie-parser
 
 // Routs
 app.use('/api/v1/user', authRouter)
+app.use('/api/v1/links', linkRouter)
 
 
 
