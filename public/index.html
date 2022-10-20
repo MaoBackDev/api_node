@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>login</title>
+</head>
+<body>
+    <form action="" method="post" id="form">
+        <input type="email" name="email" id="email" value="maodev@gmail.com">
+        <input type="password" name="password" id="password" value="maodev2022">
+        <button type="submit">Acceder</button>
+    </form>
+
+
+    <script>
+        const form = document.getElementById('form')
+        const email = document.getElementById('email')
+        const password = document.getElementById('password')
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault()
+
+            /*
+            *******    MÉTODO 1 USANDO LOCAL STORAGE FUNCIONA PERO NO ES RECOMENDABLE
+            try {
+                const res = await fetch('/api/v1/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({email: email.value, password: password.value})
+
+                })
+                console.log(res.ok, res.status)
+
+                const {token} = await res.json()
+                localStorage.setItem('token', token)
+            } catch (error) {
+                console.log(error)
+            }     
+            })
+            */
+
+
+         
+            // *******    MÉTODO 2 USANDO COOKIES ES MÁS SEGURO, PERO AÚN CONSERVA VULNERABILIDAD
+            try {
+                const res = await fetch('/api/v1/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({email: email.value, password: password.value})
+
+                })
+                console.log(res.ok, res.status)
+
+                const {token} = await res.json()
+                console.log(token)
+                // localStorage.setItem('token', token)
+            } catch (error) {
+                console.log(error)
+            }     
+        })
+        
+
+    </script>
+
+</body>
+</html>
+
+
+
+
+<!-- Existen 2 maneras clasicas de almacenar el token en el navegador, una es usar localStorage(La mas vulnerable) y la otra es haciendo uso de cookies(Es una mejor opción, pero no es 100% confiable). Miremos dos ejemplos con cada opción-->
