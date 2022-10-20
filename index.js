@@ -34,7 +34,7 @@ app.use('/api/v1/user', authRouter)
 app.use('/api/v1/links', linkRouter)
 
 // Archivos estaticos: ejemplo login jwt
-app.use(express.static('public'))
+// app.use(express.static('public'))
 
 
 // Listen method to server connection
